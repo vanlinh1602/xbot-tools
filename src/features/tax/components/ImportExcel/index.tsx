@@ -104,7 +104,7 @@ export const ImportExcel = ({ onSubmit, onClose }: Props) => {
               <Button
                 onClick={() => {
                   const link = document.createElement('a');
-                  link.href = '/assets/tax-import.xlsx';
+                  link.href = '/tax-import.xlsx';
                   link.download = 'tax-import.xlsx';
                   document.body.appendChild(link);
                   link.click();
