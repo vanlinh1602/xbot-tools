@@ -1,6 +1,8 @@
 import { CloudUpload } from 'lucide-react';
+import { toast } from 'sonner';
 import { read, utils } from 'xlsx';
 
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,30 +12,48 @@ import {
 } from '@/components/ui/dialog';
 import { FileInput, FileUploader } from '@/components/ui/file-uploader';
 
+import { TaxInput } from '../../type';
+
 type Props = {
-  onSubmit: (taxCodes: string[]) => void;
+  onSubmit: (taxCodes: TaxInput[]) => void;
   onClose: () => void;
 };
 
 export const ImportExcel = ({ onSubmit, onClose }: Props) => {
   const handleFileUpload = (files: File[] | null) => {
-    if (!files) return;
-    const file = files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = read(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = utils.sheet_to_json(worksheet, {
-          header: 1,
-        }) as string[][];
-        console.log('jsonData', jsonData);
-
-        const codes = jsonData.flat().filter(Boolean);
-        onSubmit(codes);
-      };
-      reader.readAsArrayBuffer(file);
+    try {
+      if (!files) return;
+      const file = files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = utils.sheet_to_json(worksheet, {
+            header: 1,
+          }) as string[][];
+          const headers = jsonData.shift();
+          if (
+            ['Mã số thuế', 'Tên Công Ty', 'Địa chỉ'].join() !== headers?.join()
+          ) {
+            toast.error('File excel không đúng định dạng');
+            return;
+          }
+          const codes: TaxInput[] = jsonData
+            .filter((row) => !!row[0])
+            .map((row) => ({
+              taxCode: row[0]?.toString(),
+              companyName: row[1]?.toString() || '',
+              address: row[2]?.toString() || '',
+            }));
+          onSubmit(codes);
+          onClose();
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    } catch (error: any) {
+      toast.error(error.message);
     }
   };
 
@@ -79,6 +99,20 @@ export const ImportExcel = ({ onSubmit, onClose }: Props) => {
                   </div>
                 </FileInput>
               </FileUploader>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = '/assets/tax-import.xlsx';
+                  link.download = 'tax-import.xlsx';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                Tải file mẫu
+              </Button>
             </div>
           </DialogDescription>
         </DialogHeader>
