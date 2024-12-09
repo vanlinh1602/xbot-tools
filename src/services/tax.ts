@@ -20,7 +20,7 @@ export class TaxLookupService {
     ids: string[]
   ): Promise<Record<string, TaxData | undefined>> {
     const result: Record<string, TaxData | undefined> = {};
-    const sliptIds = _.chunk(ids, 15);
+    const sliptIds = _.chunk(ids, 10);
     for (const chunk of sliptIds) {
       await Promise.all(
         chunk.map(async (id) => {
