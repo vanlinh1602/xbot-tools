@@ -5,6 +5,11 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -78,16 +83,14 @@ export default function TaxCode() {
         }
         const check = checkValidTax(data.input, data.query);
         if (filter.status === 'valid') {
-          return check;
+          return check?.length === 0;
         }
-        return !check;
+        return check?.length;
       })
     );
   }, [taxCodes, filter.status]);
 
   const handleInportTaxes = (taxes: TaxInput[]) => {
-    console.log(taxes);
-
     const taxesAdded = taxes.reduce((acc, tax) => {
       acc[tax.taxCode] = {
         input: tax,
@@ -205,15 +208,23 @@ export default function TaxCode() {
                     )}
                   </TableCell>
                   <TableCell className="border-b border-gray-200 text-center">
-                    <span
-                      className={`px-2 py-1 rounded ${
-                        check
-                          ? 'bg-green-200 text-green-800'
-                          : 'bg-red-200 text-red-800'
-                      }`}
-                    >
-                      {check ? 'Đúng' : 'Sai'}
-                    </span>
+                    {(data.input?.companyName || data.input.address) &&
+                    check ? (
+                      <Popover>
+                        <PopoverTrigger disabled={!check?.length}>
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              !check?.length
+                                ? 'bg-green-200 text-green-800'
+                                : 'bg-red-200 text-red-800'
+                            }`}
+                          >
+                            {check.length === 0 ? 'Đúng' : 'Sai'}
+                          </span>
+                        </PopoverTrigger>
+                        <PopoverContent>{check.join(', ')}</PopoverContent>
+                      </Popover>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               );

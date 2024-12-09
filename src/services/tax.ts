@@ -1,4 +1,5 @@
 import axios from 'axios';
+import _ from 'lodash';
 
 type TaxRespone = {
   code: string;
@@ -19,18 +20,24 @@ export class TaxLookupService {
     ids: string[]
   ): Promise<Record<string, TaxData | undefined>> {
     const result: Record<string, TaxData | undefined> = {};
-    await Promise.all(
-      ids.map(async (id) => {
-        const response = await axios.get<TaxRespone>(`/v2/business/${id}`, {
-          baseURL: 'https://api.vietqr.io/',
-        });
-        if (response.data.data) {
-          result[id] = response.data.data;
-        } else {
-          result[id] = undefined;
-        }
-      })
-    );
+    const sliptIds = _.chunk(ids, 15);
+    for (const chunk of sliptIds) {
+      await Promise.all(
+        chunk.map(async (id) => {
+          const response = await axios.get<TaxRespone>(`/v2/business/${id}`, {
+            baseURL: 'https://api.vietqr.io/',
+          });
+          if (response.data.data) {
+            result[id] = response.data.data;
+          } else {
+            result[id] = undefined;
+          }
+        })
+      );
+      if (chunk !== _.last(sliptIds)) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
     return result;
   }
 }
